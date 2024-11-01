@@ -13,7 +13,20 @@ $conf['debug'] = 0;
 $conf['ssl_peer_verify'] = false;
 
 # Try to detect CDNs used
-$conf['cdn_detection'] = true;
+$conf['cdn_detection'] = false;
+
+# 
+$conf['show_url_timing_bar'] = true;
+
+# Prerender server https://github.com/prerender/prerender
+# If you want to use HARrr server instead of PhantomJS uncomment below. Overrides any PhantomJS settings
+#$conf['prerender_server_url'] = "http://<full_path>/har";
+
+# For IP to AS resolution use local file-based cache. If following defined use the file as the cache file
+#$conf['cache_file'] = "/var/www/cache/cache.json";
+# Cache time
+#$conf['cache_time'] = 8640000;
+
 
 # These are the headers that can be used in the URL test. If you are finding you are using the
 # the same headers all the time you can set them here to default to a value
@@ -27,6 +40,19 @@ $conf['allowed_dns_query_types'] = array (
     "MX",
     "SOA",
     "TXT",
+    "NS",
+    "CAA"
+);
+
+$conf['allowed_http_methods'] = array(
+  "GET",
+  "POST",
+  "HEAD",
+  "DELETE",
+  "OPTIONS",
+  "PURGE",
+  "PATCH",
+  "PUT"
 );
 
 # Should ping/mtr be enabled

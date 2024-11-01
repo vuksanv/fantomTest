@@ -34,6 +34,14 @@ body{
   background-color: orange;
 }
 
+.http3 {
+  background-color: lightcoral;
+}
+
+.websockets {
+  background-color: lightblue;
+}
+
 .time_legend {
   text-align: center;
   color: white;
@@ -70,6 +78,10 @@ body{
   border: 1px solid #000;
 }
 
+.vendor_img {
+  height: 15;
+}
+
 .fill {
   float: left;
 }
@@ -84,6 +96,10 @@ body{
 }
 .error {
   background: #FF9786;
+}
+
+.response_101 {
+  background: #BDF0EB;
 }
 
 .response_200 {

@@ -20,7 +20,7 @@ include_once("./tools.php");
 <link type="text/css" href="css/fantomtest.css" rel="stylesheet" />
 <script type="text/javascript" src="<?php print $conf['jquery_js_path']; ?>"></script>
 <script type="text/javascript" src="<?php print $conf['jqueryui_js_path']; ?>"></script>
-<script type="text/javascript" src="<?php print $conf['jquery_tablesorter']; ?>"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
 <script>
 
 <?php
@@ -100,11 +100,25 @@ function buildTimeTicks(totalTime) {
 function getTimings() {
     window.location.hash = $("#checked_url").val();
     $("#results").html('<img src="img/spinner.gif">');
-    $.get('waterfall.php', $("#query_form").serialize(), function(data) {
-	$("#results").html(data);
+    var form = $("#query_form").closest("form");
+    var formData = new FormData(form[0]);
+    $.ajax({
+      url: "waterfall.php",
+      method: "POST",
+      processData: false,
+      contentType: false,
+      data: formData,
+      success: function (data) {
+        $("#results").html(data);
         var totalTime = parseInt(parseFloat($('#total-time').text()) * 1000);
         buildTimeTicks(totalTime);
-    });
+      },
+      error: function (e) {
+          //error
+      }
+  });
+
+
 }
 
 <?php
@@ -207,10 +221,7 @@ if ( $waterfall_output ) {
 ?>
 
 <div id="tab-waterfall">
-  <div id="large_screenshot">
-  </div>
   <div id=header>
-  
   <form id="query_form">
   <?php
   // If we define remotes create a select box
@@ -226,8 +237,10 @@ if ( $waterfall_output ) {
   ?>
   URL <input id="checked_url" name="url" size=100>
   <button class="query_buttons" id="query_button" onclick="getTimings(); return false;">Get waterfall</button>
-  <br />
-  <input type="checkbox" name="include_image">Include page screenshot<br>
+  <p />
+  or upload a <a target="_blank" href="https://support.zendesk.com/hc/en-us/articles/4408828867098-Generating-a-HAR-file-for-troubleshooting" title="How go generate a HAR file">HAR (HTTP archive)</a>  <input type="file" id="har_file" name="har_file" onchange='$("#checked_url").val(""); getTimings(); return false;'>
+
+  <button class="query_buttons" onclick="$('#query_form')[0].reset(); return(false)">Reset Form</button>
   </form>
   </div>
   <div id=results>
@@ -241,7 +254,7 @@ if ( $waterfall_output ) {
 <div id="tab-url">
   <div id=header>
   
-  <form id="url_form">
+  <form id="url_form" class="pure-form">
   <?php
   // If we define remotes create a select box
   if ( isset($conf['remotes']) and is_array($conf['remotes'] ) ) {
@@ -256,11 +269,23 @@ if ( $waterfall_output ) {
     print "<input type=\"hidden\" name=\"site_id\" value=\"-1\">";
   }
   ?>
-  URL <input id="url" name="url" size=100>
-  Max time to wait for load <input id="timeout" name="timeout" size=5 value=60>
+  <p>
+  <select name="method" id="http-method">
+   <?php
+   foreach($conf['allowed_http_methods'] as $method) {
+	   print "<option>" . $method . "</option>";
+   }?>
+  </select>
+  <input type="text" name="url" id="url" placeholder="URL" size=100 required=""/>
+  Max time to wait for load <input id="timeout" name="timeout" type="number" value=60>
+  </p>
+  <p>
+  <span class="pure-form-message">Optional: </span> <input name="arbitrary_headers" placeholder="Arbitrary headers (multiple need to be || delimited e.g. Cookie: 1234 || Accept-Language: es)" <?php if ( isset($conf['arbitrary_headers']) ) print "value=\"" . htmlentities($conf['arbitrary_headers']) . "\""; ?> size=80>
+  &nbsp;<input name="override_ip_or_hostname" placeholder="Override IP/Hostname" size=50>
+  </p>
+  <p><textarea class="pure-input-1-2" name="payload" placeholder="Optional Payload"></textarea>  
   <button class="query_buttons" id="url_querybutton" onclick="getURL(); return false;">Get timings</button><p>
-  Arbitrary headers (multiple need to be || delimited e.g. Cookie: 1234 || Accept-Language: es):
-  <input name="arbitrary_headers" <?php if ( isset($conf['arbitrary_headers']) ) print "value=\"" . htmlentities($conf['arbitrary_headers']) . "\""; ?> size=80>
+  </p>
   </form>
   </div>
   <div id=url_results>
@@ -411,14 +436,11 @@ $(function(){
     $("#tabs").tabs();
     $(".query_buttons").button();
 
-    $('#large_screenshot').dialog({
-      title: "Large Picture",
-      autoOpen: false,
-      width: 800 });   
+    $( document ).tooltip();
 
 });
 var myhash = window.location.hash;
-if ( myhash != "" ) {
+if ( myhash.indexOf("#http") == 0 ) {
   $("#checked_url").val(myhash.replace("#",""));
   getTimings();
 }
