@@ -140,6 +140,16 @@ function getURL() {
      });
 }
 
+function checkHTTPMethod() {
+	let selected_value = $("#http-method").find(":selected").val();
+	if ( selected_value == "GET" || selected_value == "HEAD" ) {
+	  $("#url-payload").prop('disabled', true);
+	  $("#url-content-type").prop('disabled', true);
+	} else {
+	  $("#url-payload").prop('disabled', false);
+	  $("#url-content-type").prop('disabled', false);
+	}
+}
 
 <?php
 if ( $pingmtr_enabled ) {
@@ -202,7 +212,7 @@ if ( $pingmtr_enabled ) {
 <?php
 }
 ?>
-	<li><a href="#tab-tls-cert">TLS certificate</a></li>
+	<li><a href="#tab-tls-cert">TLS certificates</a></li>
 <?php
 if ( $tlsciphers_enabled ) {
 ?>
@@ -253,7 +263,10 @@ if ( $waterfall_output ) {
 
 <div id="tab-url">
   <div id=header>
-  
+
+  <div id="url-accordion">
+	  <h3>Form input</h3>
+  <div>
   <form id="url_form" class="pure-form">
   <?php
   // If we define remotes create a select box
@@ -270,23 +283,46 @@ if ( $waterfall_output ) {
   }
   ?>
   <p>
-  <select name="method" id="http-method">
+  <select class="pure-input-rounded" name="method" onChange="checkHTTPMethod()" id="http-method">
    <?php
    foreach($conf['allowed_http_methods'] as $method) {
 	   print "<option>" . $method . "</option>";
    }?>
   </select>
-  <input type="text" name="url" id="url" placeholder="URL" size=100 required=""/>
-  Max time to wait for load <input id="timeout" name="timeout" type="number" value=60>
+  <input type="text" name="url" id="url" class="pure-input-rounded" placeholder="URL" size=100 required=""/>
+  Max time to wait for load <input id="timeout" class="pure-input-rounded" name="timeout" type="number" value=60>
   </p>
   <p>
-  <span class="pure-form-message">Optional: </span> <input name="arbitrary_headers" placeholder="Arbitrary headers (multiple need to be || delimited e.g. Cookie: 1234 || Accept-Language: es)" <?php if ( isset($conf['arbitrary_headers']) ) print "value=\"" . htmlentities($conf['arbitrary_headers']) . "\""; ?> size=80>
-  &nbsp;<input name="override_ip_or_hostname" placeholder="Override IP/Hostname" size=50>
+  <span class="pure-form-message">Optional: </span> <input name="arbitrary_headers" class="pure-input-rounded" placeholder="Arbitrary headers (multiple need to be || delimited e.g. Cookie: 1234 || Accept-Language: es)" <?php if ( isset($conf['arbitrary_headers']) ) print "value=\"" . htmlentities($conf['arbitrary_headers']) . "\""; ?> size=80>
+  &nbsp;<input name="override_ip_or_hostname" class="pure-input-rounded" placeholder="Override IP/Hostname" size=50>
   </p>
-  <p><textarea class="pure-input-1-2" name="payload" placeholder="Optional Payload"></textarea>  
+  <p>
+  <span class="pure-form-message">Payload content Type: </span>
+  <select class="pure-input-rounded" id="url-content-type" name="url-content-type" disabled>
+      <option>application/x-www-form-urlencoded</option>
+      <option>application/json</option>
+      <option>multipart/form-data</option>
+  </select>
+  <textarea class="pure-input-1-2" name="payload" id="url-payload" disabled placeholder="Optional Payload. Available for methods other than GET/HEAD"></textarea>  
   <button class="query_buttons" id="url_querybutton" onclick="getURL(); return false;">Get timings</button><p>
   </p>
   </form>
+  </div>
+	  <h3>Power user</h3>
+  <div>
+	<form class="pure-form">
+      <span class="pure-form-message">Payload content Type: </span>
+      <textarea class="pure-input-1-2" name="json-" id="url-poweruser" 
+		rows="10" cols="220"  placeholder="Request JSON"></textarea>  
+	  <button class="query_buttons" id="url_querybutton" onclick="getURLPowerUser(); return false;">Get timings</button><p>
+	</form>
+  </div>
+  </div>
+  <script>
+  $( function() {
+    $( "#url-accordion" ).accordion();
+  } );
+  </script>
   </div>
   <div id=url_results>
   </div>
@@ -297,7 +333,7 @@ if ( $waterfall_output ) {
 <div id="tab-dns">
   <div id=header>
   
-  <form id="dns_form">
+  <form id="dns_form" class="pure-form">
   <?php
   // If we define remotes create a select box
   if ( isset($conf['remotes']) and is_array($conf['remotes'] ) ) {
@@ -312,7 +348,7 @@ if ( $waterfall_output ) {
     print "<input type=\"hidden\" name=\"site_id\" value=\"-1\">";
   }
   ?>
-  Host name <input id="hostname" name="hostname" size=100>
+  <input id="hostname" name="hostname" placeholder="Name to resolve" size=100>
   Query Type <select name="query_type">
   <?php
   
@@ -340,7 +376,7 @@ if ( $pingmtr_enabled ) {
 <div id="tab-pingmtr">
   <div id=header>
   
-  <form id="pingmtr_form">
+  <form id="pingmtr_form" class="pure-form">
   <?php
   // If we define remotes create a select box
   if ( isset($conf['remotes']) and count($conf['remotes'] ) > 0 ) {
@@ -355,7 +391,7 @@ if ( $pingmtr_enabled ) {
     print "<input type=\"hidden\" name=\"site_id\" value=\"-1\">";
   }
   ?>
-  Host name <input id="hostname" name="hostname" size=80>
+  <input id="hostname" name="hostname" placeholder="Hostname or IP" size=80>
   # Pings <input id="ping_count" name="ping_count" value=5 size=4>
   <button class="query_buttons" id="ping_querybutton" onclick="getPingMtr(); return false;">Ping/MTR</button>
   <br />
@@ -370,7 +406,7 @@ if ( $pingmtr_enabled ) {
 
 <div id="tab-tls-cert">
   <div id=header>
-  <form id="tls_cert_form">
+  <form id="tls_cert_form" class="pure-form">
   <?php
   // If we define remotes create a select box
   if ( isset($conf['remotes']) and count($conf['remotes'] ) > 0 ) {
@@ -385,9 +421,10 @@ if ( $pingmtr_enabled ) {
     print "<input type=\"hidden\" name=\"site_id\" value=\"-1\">";
   }
   ?>
-  Host name <input id="hostname" name="hostname" size=100>
-  Port <input id="port" name="port" value=443 size=6> <p />
-  Optional SNI name (usually blank): <input id="sni_name" name="sni_name" size=60>
+  <p>
+  <input id="hostname" name="hostname" type="text" placeholder="Host name or IP" size=100>
+  Port <input id="port" name="port" type="number" value=443 size=2> <p />
+  <span class="pure-form-message">Optional: </span> <input id="sni_name" name="sni_name" placeholder="SNI Hostname" size=60>
   <button class="query_buttons" id="ssl_querybutton" onclick="getTLSCert(); return false;">Get certificate</button>
   <br />
   </form>

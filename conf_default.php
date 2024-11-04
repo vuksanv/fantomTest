@@ -55,16 +55,23 @@ $conf['allowed_http_methods'] = array(
   "PUT"
 );
 
-# Should ping/mtr be enabled
+# Should ping/mtr be enabled. Make sure paths to ping and mtr are correct. Otherwise 
+# the tab will be disabled
 $conf['pingmtr_enabled'] = true;
 $conf['ping_bin'] = "/bin/ping";
 $conf['ping6_bin'] = "/bin/ping6";
 $conf['mtr_bin'] = "/usr/bin/mtr";
+# 
+if ( !( is_executable($conf['mtr_bin']) && ! is_executable($conf['ping_bin'] = "/bin/ping") ) ) {
+  $conf['pingmtr_enabled'] = false;
+}
+
+# Should NMAP be available
 $conf['nmap_bin'] = "/usr/bin/nmap";
 
-$conf['jquery_js_path']    = "https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js";
-$conf['jqueryui_js_path']  = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js";
-$conf['jqueryui_css_path'] = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/flick/jquery-ui.min.css";
+$conf['jquery_js_path']    = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js";
+$conf['jqueryui_js_path']  = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/jquery-ui.min.js";
+$conf['jqueryui_css_path'] = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/themes/flick/jquery-ui.min.css";
 $conf['jquery_tablesorter'] = "https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.25.7/js/jquery.tablesorter.min.js";
 
 # Read README on what are remotes
