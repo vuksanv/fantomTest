@@ -1118,7 +1118,7 @@ function ip_to_as_image_or_text($ip) {
 #############################################################################################
 # Get Curl timings
 #############################################################################################
-function get_curl_timings_with_headers($protocol, $method, $timeout, $original_url, $request_headers = array(), $override_ip = "", $payload = "") {
+function get_curl_timings_with_headers($protocol, $method, $timeout, $original_url, $request_headers = array(), $override_ip = "", $http_proxy = "", $payload = "") {
 
     $url = validate_url($original_url);
     
@@ -1139,6 +1139,9 @@ function get_curl_timings_with_headers($protocol, $method, $timeout, $original_u
     if ( $method != "GET" ) {
       curl_setopt($curly, CURLOPT_CUSTOMREQUEST, $method);
     }
+    if ( $http_proxy != "" ) {
+      curl_setopt($curly, CURLOPT_PROXY, $http_proxy);
+    }
     $dest_port = "443";
     switch ( $url_parts['scheme'] ) {
 	  case "http":
@@ -1156,14 +1159,14 @@ function get_curl_timings_with_headers($protocol, $method, $timeout, $original_u
 
     # Set the Resolve Flag if the override IP is set
     if ( $override_ip != "" ) {
-	  $override_array[] = $url_parts["host"] . ":" . $dest_port . ":" . $override_ip;
-	  curl_setopt($curly, CURLOPT_RESOLVE, $override_array);
-	}
+      $override_array[] = $url_parts["host"] . ":" . $dest_port . ":" . $override_ip;
+      curl_setopt($curly, CURLOPT_RESOLVE, $override_array);
+    }
 
     if ( !in_array($method, array("GET", "HEAD") ) ) {
-	  $request_headers[] = "content-length: " . strlen($payload);
-	  curl_setopt($curly, CURLOPT_POSTFIELDS, $payload);
-	}
+      $request_headers[] = "content-length: " . strlen($payload);
+      curl_setopt($curly, CURLOPT_POSTFIELDS, $payload);
+    }
 
     curl_setopt($curly, CURLOPT_ENCODING , "gzip");
     curl_setopt($curly, CURLOPT_HTTPHEADER, $request_headers );
@@ -1176,7 +1179,11 @@ function get_curl_timings_with_headers($protocol, $method, $timeout, $original_u
     if(curl_errno($curly)) {
         $results = array("return_code" => 400, "response_size" => 0, "content_type" => "none", "error_message" =>  curl_error($curly) );
     } else {
-      list($header, $content) = explode("\r\n\r\n", $response);
+      if ( $http_proxy == "" ) {
+        list($header, $content) = explode("\r\n\r\n", $response);
+      } else {
+        list($proxy_header, $header, $content) = explode("\r\n\r\n", $response);
+      }
       
       $info = curl_getinfo($curly);
       $results = array(
@@ -1273,46 +1280,59 @@ function print_url_results($records) {
     }
     print "<tr><td>" . $site_name . "</td>";
 
-    # Sort the response headers by name
-    $resp_headers = explode("\r\n", $record['headers_string']);
-    sort($resp_headers);
+	if ( isset($record['error_message'] ) ) {
+      print "<td><font color=red>" . $record['error_message']  . "</font></td>";
+      print "<td></td>";
+      print "<td></td>";
+      print "<td></td>";
+      print "<td>" . $record['return_code'] . "</td>";
+      print "<td>&nbsp;</td>";
+      print "<td>&nbsp;</td>";
 
-    print "<td><div id='header_results_" . $id .  "'>";
-    print "<pre style='font-size:0.75vw'>" . htmlentities(join("\n", $resp_headers)) ;
-    print "</pre></div>";
-    print "</td>";
+    } else {
+      # Sort the response headers by name
+      $resp_headers = explode("\r\n", $record['headers_string']);
+      sort($resp_headers);
 
-    print "<td>";
-    print "<div id='body_" . $id .  "' >".
-   "<button class=\"http_headers\" onClick='$(\"#body_results_" . $id .  "\").toggle(); return false;'>Show Body</button></div>";
+      print "<td><div id='header_results_" . $id .  "'>";
+      print "<pre style='font-size:0.75vw'>" . htmlentities(join("\n", $resp_headers)) ;
+      print "</pre></div>";
+      print "</td>";
 
-    print "<div id='body_results_" . $id .  "' style=\"display: none;\">";
-    print "<pre>" . htmlentities($record['response_body']) ;
-    print "</pre></div>";
-    print "</td>";
+      print "<td>";
+      print "<div id='body_" . $id .  "' >".
+       "<button class=\"http_headers\" onClick='$(\"#body_results_" . $id .  "\").toggle(); return false;'>Show Body</button></div>";
 
-    $gzip = preg_match("/Content-Encoding: (gzip|br)/i", $record['headers_string']) ? "Yes" : "No";
+      print "<div id='body_results_" . $id .  "' style=\"display: none;\">";
+      print "<pre>" . htmlentities($record['response_body']) ;
+      print "</pre></div>";
+      print "</td>";
 
-    print "<td rowspan=2><b>" . $record['primary_ip'] . "</b><br />" . ip_to_as_image_or_text($record['primary_ip']) . "</td>";
-    if ( $conf['cdn_detection'] ) {
-      $cache_hit_styling = preg_match("/HIT$/", $cache_hit ) ? "x-cache-HIT" : "x-cache-MISS";
+      $gzip = preg_match("/Content-Encoding: (gzip|br)/i", $record['headers_string']) ? "Yes" : "No";
 
-      print "<td rowspan=2 class=cache_servers>" . $xservedby . "</td>" .
-        "<td rowspan=2 class='" . $cache_hit_styling . "'>" . $cache_hit . "</td>";
-    }
-    print "<td rowspan=2 class='" . strtolower($gzip) . "-gzip'>" . $gzip . "</td>" .
+      print "<td rowspan=2><b>" . $record['primary_ip'] . "</b><br />" . ip_to_as_image_or_text($record['primary_ip']) . "</td>";
+      if ( $conf['cdn_detection'] ) {
+        $cache_hit_styling = preg_match("/HIT$/", $cache_hit ) ? "x-cache-HIT" : "x-cache-MISS";
+
+        print "<td rowspan=2 class=cache_servers>" . $xservedby . "</td>" .
+          "<td rowspan=2 class='" . $cache_hit_styling . "'>" . $cache_hit . "</td>";
+      }
+      print "<td rowspan=2 class='" . strtolower($gzip) . "-gzip'>" . $gzip . "</td>" .
         "<td rowspan=2 align=center>" . $record['return_code'] . "</td>" .
         "<td class=number>" . number_format($record['response_size']) . "</td>" .
         "<td class=number>" . number_format($record['header_size']) . "</td>";
 
-    if ( $conf['show_url_timing_bar'] ) {
+      if ( $conf['show_url_timing_bar'] ) {
         "<td class=number>" . number_format($record['dns_lookuptime'],3) . "</td>" .
         "<td class=number>" . number_format($record['connect_time'],3) . "</td>" .
         "<td class=number>" . number_format($record['pretransfer_time'], 3) . "</td>" .
         "<td class=number>" . number_format($record['starttransfer_time'], 3) . "</td>" .
         "<td class=number>" . number_format($record['transfer_time'], 3) . "</td>" .
         "<td class=number>" . number_format($record['total_time'], 3) . "</td>";
+      }
+
     }
+
     print "</tr>";
 
     # Make the bar graph of response

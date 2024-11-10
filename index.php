@@ -233,7 +233,7 @@ if ( $waterfall_output ) {
 
 <div id="tab-waterfall">
   <div id=header>
-  <form id="query_form">
+  <form id="query_form" class="pure-form">
   <?php
   // If we define remotes create a select box
   if ( isset($conf['remotes']) and is_array($conf['remotes'] ) ) {
@@ -246,10 +246,11 @@ if ( $waterfall_output ) {
     print "<input type=\"hidden\" name=\"site_id\" value=\"-1\">";
   }
   ?>
-  URL <input id="checked_url" name="url" size=100>
+  <input type="text" name="url" id="checked_url" class="pure-input-rounded" placeholder="URL" size=100 required=""/>
   <button class="query_buttons" id="query_button" onclick="getTimings(); return false;">Get waterfall</button>
   <p />
-  or upload a <a target="_blank" href="https://support.zendesk.com/hc/en-us/articles/4408828867098-Generating-a-HAR-file-for-troubleshooting" title="How go generate a HAR file">HAR (HTTP archive)</a>  <input type="file" id="har_file" name="har_file" onchange='$("#checked_url").val(""); getTimings(); return false;'>
+  or upload a <a target="_blank" href="https://support.zendesk.com/hc/en-us/articles/4408828867098-Generating-a-HAR-file-for-troubleshooting" title="How go generate a HAR file">HAR (HTTP archive)</a>
+  <input type="file" id="har_file" name="har_file" class="pure-button" onchange='$("#checked_url").val(""); getTimings(); return false;'>
 
   <button class="query_buttons" onclick="$('#query_form')[0].reset(); return(false)">Reset Form</button>
   </form>
@@ -306,6 +307,9 @@ if ( $waterfall_output ) {
   <p>
   <span class="pure-form-message">Optional: </span> <input name="arbitrary_headers" class="pure-input-rounded" placeholder="Arbitrary headers (multiple need to be || delimited e.g. Cookie: 1234 || Accept-Language: es)" <?php if ( isset($conf['arbitrary_headers']) ) print "value=\"" . htmlentities($conf['arbitrary_headers']) . "\""; ?> size=80>
   &nbsp;<input name="override_ip_or_hostname" class="pure-input-rounded" placeholder="Override IP/Hostname" size=50>
+  <?php if ( $conf['allow_proxy_for_url_check'] ) {
+  ?> <input name="http_proxy" class="pure-input-rounded" placeholder="HTTP proxy" size=50>
+  <?php } ?>
   </p>
   <p>
   <span class="pure-form-message">Payload content Type: </span>
